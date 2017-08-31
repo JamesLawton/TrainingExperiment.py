@@ -11,7 +11,7 @@ If you publish work using this script please cite the PsychoPy publications:
 """
 
 from __future__ import absolute_import, division
-from psychopy import locale_setup, sound, gui, visual, core, data, event, logging
+from psychopy import locale_setup, sound, gui, visual, core, data, event, logging, parallel
 from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
                                 STOPPED, FINISHED, PRESSED, RELEASED, FOREVER)
 import numpy as np  # whole numpy lib is available, prepend 'np.'
@@ -21,6 +21,7 @@ from numpy.random import random, randint, normal, shuffle
 import os  # handy system and path functions
 import sys  # to get file system encoding
 import pandas as pd
+
 
 # Ensure that relative paths start from the same directory as this script
 _thisDir = os.path.dirname(os.path.abspath(__file__))
@@ -37,7 +38,7 @@ expInfo['expName'] = expName
 
 # Data file name stem = absolute path + name; later add .psyexp, .csv, .log, etc
 filename = _thisDir + os.sep + u'data' + os.sep + '%s_%s' % (expInfo['participant'], expInfo['date'])
-
+pause_reps = 0
 
 
 # An ExperimentHandler isn't essential but helps with data saving
@@ -56,7 +57,7 @@ endExpNow = False  # flag for 'escape' or other condition => quit the exp
 win = visual.Window(
     size=(1536, 864), fullscr=True, screen=0,
     allowGUI=False, allowStencil=False,
-    monitor='testMonitor', color=[0, 0, 0], colorSpace='rgb',
+    monitor='testMonitor', color=[-0.5, -0.5, -0.5], colorSpace='rgb',
     blendMode='avg', useFBO=True)
 # store frame rate of monitor if we can measure it
 expInfo['frameRate'] = win.getActualFrameRate()
@@ -69,18 +70,16 @@ else:
 # Initialize components for Routine "trial"
 trialClock = core.Clock()
 
-
-
 presentSet = visual.TextStim(win=win, name='presentSet',
     text='default text',
     font='Arial',
-    pos=[0, 0], height=0.1, wrapWidth=None, ori=0, 
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     depth=-1.0);
 presentTarget = visual.TextStim(win=win, name='presentTarget',
     text='default text',
     font='Arial',
-    pos=[0, 0], height=0.1, wrapWidth=None, ori=0, 
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     depth=-2.0);
 presentTarget2 = visual.TextStim(win=win, name='presentTarget',
@@ -101,6 +100,12 @@ presentTarget4 = visual.TextStim(win=win, name='presentTarget',
     pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     depth=-2.0);
+presentTarget5 = visual.TextStim(win=win, name='presentTarget',
+    text='default text',
+    font='Arial',
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
+    color='white', colorSpace='rgb', opacity=1,
+    depth=-2.0);
 
 # Initialize components for Routine "feedback"
 feedbackClock = core.Clock()
@@ -109,16 +114,16 @@ msg=''
 feedback_2 = visual.TextStim(win=win, name='feedback_2',
     text='default text',
     font='Arial',
-    pos=[0, 0], height=0.1, wrapWidth=None, ori=0, 
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color=[1,1,1], colorSpace='rgb', opacity=1,
     depth=-1.0);
 
 # Initialize components for Routine "mainInstruct"
 mainInstructClock = core.Clock()
 instr2 = visual.TextStim(win=win, name='instr2',
-    text='OK, ready to start the main experiment?\n\nRemember:\n - LEFT CURSOR for NOT in the sequence\n - RIGHT CURSOR for IN the sequence\nTry to respond as quickly and as accurately as possible.\n\nWhen you are ready to proceed press any key.',
+    text='The following experiment will present you a complete sentence. Once the sentence has been presented, the individual words that form the sentence will be displayed sequentially.\nSome of the words may or may not be changed - if a word is changed, it will only be for one word in the sentence.\nYour goal is to remember the changed word and the location of it in the sentence.\nYou can do this by pressing 1 for word 1, 2 for word 2, etc., at the end of each trial.\nTry to respond as quickly and as accurately as possible.\n\nWhen you are ready to proceed press any key.',
     font='Arial',
-    pos=[0, 0], height=0.05, wrapWidth=None, ori=0, 
+    pos=[0, 0], height=0.07, wrapWidth=None, ori=0,
     color=[1, 1, 1], colorSpace='rgb', opacity=1,
     depth=0.0);
 
@@ -128,13 +133,13 @@ trialClock = core.Clock()
 presentSet = visual.TextStim(win=win, name='presentSet',
     text='default text',
     font='Arial',
-    pos=[0, 0], height=0.1, wrapWidth=None, ori=0, 
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     depth=-1.0);
 presentTarget = visual.TextStim(win=win, name='presentTarget',
     text='default text',
     font='Arial',
-    pos=[0, 0], height=0.1, wrapWidth=None, ori=0, 
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     depth=-2.0);
 presentTarget2 = visual.TextStim(win=win, name='presentTarget2',
@@ -161,7 +166,19 @@ presentTarget5 = visual.TextStim(win=win, name='presentTarget5',
     pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
     color='white', colorSpace='rgb', opacity=1,
     depth=-2.0);
-
+resp_text = visual.TextStim(win=win, name='resp_text',
+    text='Press 1 on the keyboard for word 1\n2 = word 2\n3 = word 3\n4 = word 4\n5 = word 5',
+    font='Arial',
+    pos=[0, 0], height=0.1, wrapWidth=None, ori=0,
+    color='white', colorSpace='rgb', opacity=1,
+    depth=-2.0);
+#Initialize Components for Break
+break_text = visual.TextStim(win=win, name='break',
+    text= 'This is a break, feel free to take a few minutes to relax. Once you are ready to continue the experiment, press any key.',
+    font='Arial',
+    pos=[0, 0], height=0.07, wrapWidth=None, ori=0,
+    color=[1, 1, 1], colorSpace='rgb', opacity=1,
+    depth=0.0);
 
 # Create some handy timers
 globalClock = core.Clock()  # to track the time since experiment started
@@ -259,12 +276,25 @@ if thisTrial != None:
     for paramName in thisTrial.keys():
         exec (paramName + '= thisTrial.' + paramName)
 
+
 for thisTrial in trials:
     currentLoop = trials
     # abbreviate parameter names if possible (e.g. rgb = thisTrial.rgb)
     if thisTrial != None:
         for paramName in thisTrial.keys():
             exec (paramName + '= thisTrial.' + paramName)
+
+    length_PresentTarget = len(target[0])
+    length_PresentTarget2 = len(target[1])
+    length_PresentTarget3 = len(target[2])
+    length_PresentTarget4 = len(target[3])
+    length_PresentTarget5 = len(target[4])
+
+    trials.addData('LengthTarget0', length_PresentTarget)
+    trials.addData('LengthTarget1', length_PresentTarget2)
+    trials.addData('LengthTarget2', length_PresentTarget3)
+    trials.addData('LengthTarget3', length_PresentTarget4)
+    trials.addData('LengthTarget4', length_PresentTarget5)
 
     # ------Prepare to start Routine "trial"-------
     t = 0
@@ -280,6 +310,9 @@ for thisTrial in trials:
     presentTarget3.setText(target[2])
     presentTarget4.setText(target[3])
     presentTarget5.setText(target[4])
+
+
+
 
     resp = event.BuilderKeyResponse()
     # keep track of which components have finished
@@ -302,77 +335,87 @@ for thisTrial in trials:
             presentSet.tStart = t
             presentSet.frameNStart = frameN  # exact frame index
             presentSet.setAutoDraw(True)
-        frameRemains = 1.2 + 1.5 - win.monitorFramePeriod * 0.75  # most of one frame period left
+        frameRemains = 4.2 + 1.5 - win.monitorFramePeriod * 0.75  # most of one frame period left
         if presentSet.status == STARTED and t >= frameRemains:
             presentSet.setAutoDraw(False)
 
         # *presentTarget* updates
         #Target1
-        if t >= 4.7 and presentTarget.status == NOT_STARTED:
+        if t >= 5.7 and presentTarget.status == NOT_STARTED:
             presentTarget.tStart = t
             presentTarget.frameNStart = frameN
             presentTarget.setAutoDraw(True)
-        frameRemains = 4.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
+        frameRemains = 5.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
         if presentTarget.status == STARTED and t >= frameRemains:
             presentTarget.setAutoDraw(False)
             #Target2
-        if t >= 6.7 and presentTarget2.status == NOT_STARTED:
+        if t >= 7.7 and presentTarget2.status == NOT_STARTED:
             presentTarget2.tStart = t
             presentTarget2.frameNStart = frameN
             presentTarget2.setAutoDraw(True)
-        frameRemains = 6.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
+        frameRemains = 7.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
         if presentTarget2.status == STARTED and t >= frameRemains:
             presentTarget2.setAutoDraw(False)
             #Target3
-        if t >= 8.7 and presentTarget3.status == NOT_STARTED:
+        if t >= 9.7 and presentTarget3.status == NOT_STARTED:
             presentTarget3.tStart = t
             presentTarget3.frameNStart = frameN
             presentTarget3.setAutoDraw(True)
-        frameRemains = 8.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
+        frameRemains = 9.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
         if presentTarget3.status == STARTED and t >= frameRemains:
             presentTarget3.setAutoDraw(False)
             #Target4
-        if t >= 10.7 and presentTarget4.status == NOT_STARTED:
+        if t >= 11.7 and presentTarget4.status == NOT_STARTED:
             presentTarget4.tStart = t
             presentTarget4.frameNStart = frameN
             presentTarget4.setAutoDraw(True)
-        frameRemains = 10.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
+        frameRemains = 11.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
         if presentTarget4.status == STARTED and t >= frameRemains:
             presentTarget4.setAutoDraw(False)
             #Target5
-        if t >= 12.7 and presentTarget5.status == NOT_STARTED:
+        if t >= 13.7 and presentTarget5.status == NOT_STARTED:
             presentTarget5.tStart = t
             presentTarget5.frameNStart = frameN
             presentTarget5.setAutoDraw(True)
-        frameRemains = 12.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
+        frameRemains = 13.7 + 2 - win.monitorFramePeriod * 0.75  # most of one frame period left
         if presentTarget5.status == STARTED and t >= frameRemains:
             presentTarget5.setAutoDraw(False)
 
+
         # *resp* updates
-        if t >= 15.0 and resp.status == NOT_STARTED:
+        if t >= 16.0 and resp.status == NOT_STARTED:
             # keep track of start time/frame for later
             resp.tStart = t
             resp.frameNStart = frameN  # exact frame index
             resp.status = STARTED
+            resp_text.setAutoDraw(True)
+            #resp.setText("Press the key for the word that was changed. 0 = word 1, 1 = word 2, 2 = word 3")
             # keyboard checking is just starting
             win.callOnFlip(resp.clock.reset)  # t=0 on next screen flip
             event.clearEvents(eventType='keyboard')
         if resp.status == STARTED:
-            theseKeys = event.getKeys(keyList=['left', 'right'])
+            allowed_keys = ['1', 'num_1', '2', 'num_2', '3', 'num_3', '4', 'num_4', '5', 'num_5']
+            theseKeys = event.getKeys(keyList=allowed_keys)
+
 
             # check for quit:
             if "escape" in theseKeys:
                 endExpNow = True
             if len(theseKeys) > 0:  # at least one key was pressed
-                resp.keys = theseKeys[-1]  # just the last key pressed
+                resp.keys = theseKeys[-1].strip('num_')  # just the last key pressed
                 resp.rt = resp.clock.getTime()
                 # was this 'correct'?
+                #subject 1 to match the index of words
+                resp.keys = int(resp.keys) - 1
                 if (resp.keys == str(corrAns)) or (resp.keys == corrAns):
                     resp.corr = 1
                 else:
                     resp.corr = 0
-                # a response ends the routine
+                resp_text.setAutoDraw(False)
                 continueRoutine = False
+                # a response ends the routine
+
+
 
         # check if all components have finished
         if not continueRoutine:  # a component has requested a forced-end of Routine
@@ -392,11 +435,15 @@ for thisTrial in trials:
             win.flip()
 
     # -------Ending Routine "trial"-------
+
+
     for thisComponent in trialComponents:
         if hasattr(thisComponent, "setAutoDraw"):
             thisComponent.setAutoDraw(False)
 
-    # check responses
+
+
+            # check responses
     if resp.keys in ['', [], None]:  # No response was made
         resp.keys = None
         # was no response the correct answer?!
@@ -469,7 +516,82 @@ for thisTrial in trials:
         if hasattr(thisComponent, "setAutoDraw"):
             thisComponent.setAutoDraw(False)
 
-    thisExp.nextEntry()
+            if trials.thisTrialN == 74:
+                t = 0
+                mainInstructClock.reset()  # clock
+                frameN = -1
+                continueRoutine = True
+                # update component parameters for each repeat
+                OK2 = event.BuilderKeyResponse()
+                # keep track of which components have finished
+                break_text_components = [break_text, OK2]
+                for thisComponent in break_text_components:
+                    if hasattr(thisComponent, 'status'):
+                        thisComponent.status = NOT_STARTED
+
+                # -------Start Routine "mainInstruct"-------
+                while continueRoutine:
+                    # get current time
+                    t = mainInstructClock.getTime()
+                    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+                    # update/draw components on each frame
+
+                    # *instr2* updates
+                    if t >= 0.0 and break_text.status == NOT_STARTED:
+                        # keep track of start time/frame for later
+                        break_text.tStart = t
+                        break_text.frameNStart = frameN  # exact frame index
+                        break_text.setAutoDraw(True)
+
+                    # *OK2* updates
+                    if t >= 0.0 and OK2.status == NOT_STARTED:
+                        # keep track of start time/frame for later
+                        OK2.tStart = t
+                        OK2.frameNStart = frameN  # exact frame index
+                        OK2.status = STARTED
+                        # keyboard checking is just starting
+                        win.callOnFlip(OK2.clock.reset)  # t=0 on next screen flip
+                        event.clearEvents(eventType='keyboard')
+                    if OK2.status == STARTED:
+                        theseKeys = event.getKeys()
+
+                        # check for quit:
+                        if "escape" in theseKeys:
+                            endExpNow = True
+                        if len(theseKeys) > 0:  # at least one key was pressed
+                            OK2.keys = theseKeys[-1]  # just the last key pressed
+                            OK2.rt = OK2.clock.getTime()
+                            # a response ends the routine
+                            continueRoutine = False
+
+                    # check if all components have finished
+                    if not continueRoutine:  # a component has requested a forced-end of Routine
+                        break
+                    continueRoutine = False  # will revert to True if at least one component still running
+                    for thisComponent in break_text_components:
+                        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+                            continueRoutine = True
+                            break  # at least one component has not yet finished
+
+                    # check for quit (the Esc key)
+                    if endExpNow or event.getKeys(keyList=["escape"]):
+                        core.quit()
+
+                    # refresh the screen
+                    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+                        win.flip()
+
+                # -------Ending Routine "Break"-------
+                for thisComponent in break_text_components:
+                    if hasattr(thisComponent, "setAutoDraw"):
+                        thisComponent.setAutoDraw(False)
+
+            thisExp.nextEntry()
+
+
+
+
+
 
 # completed 1.0 repeats of 'trials'
 
